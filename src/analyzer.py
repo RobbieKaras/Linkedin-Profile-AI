@@ -21,7 +21,7 @@ class LinkedInProfileAnalyzer:
             raise ValueError("Profile text cannot be empty.")
 
         prompt = self._build_prompt(profile_text)
-        raw_response = self.gemini_client.generate_text(prompt)
+        raw_response = self.gemini_client.generate_json(prompt)
         return self._parse_json_response(raw_response)
 
     def _build_prompt(self, profile_text: str) -> str:
@@ -56,10 +56,11 @@ Important guidance:
 - If multiple roles in one organization suggest growth, mention that showing
   progression is valuable.
 - Give practical suggestions, not vague motivational advice.
+- Be constructive and specific.
 
 Return ONLY valid JSON.
 Do not include markdown fences.
-Do not include any text before or after the JSON.
+Do not include any explanation outside the JSON.
 
 Use this exact JSON structure:
 {{
@@ -118,8 +119,8 @@ Here is the LinkedIn profile content to analyze:
     def _parse_json_response(self, raw_response: str) -> Dict[str, Any]:
         """
         Parse Gemini output as JSON.
-        Tries a direct parse first, then attempts to recover
-        JSON if the model adds extra text.
+        Tries direct parsing first, then attempts recovery
+        if extra text appears around the JSON.
         """
         try:
             return json.loads(raw_response)
@@ -134,7 +135,7 @@ Here is the LinkedIn profile content to analyze:
                     "Model response was not valid JSON and could not be recovered."
                 )
 
-            possible_json = cleaned[start : end + 1]
+            possible_json = cleaned[start:end + 1]
 
             try:
                 return json.loads(possible_json)
