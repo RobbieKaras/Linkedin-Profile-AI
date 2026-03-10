@@ -2,67 +2,73 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import sys
+import os
 
 from src.gemini_client import GeminiClient
 from src.analyzer import LinkedInProfileAnalyzer
 from src.report_generator import ReportGenerator
+from src.linkedin_parser import LinkedInDataParser
 
 
-def read_profile_input() -> str:
+def get_linkedin_folder():
     """
-    Prompt the user to paste LinkedIn profile text.
-    Input ends after one blank line.
+    Ask the user for the LinkedIn export folder path.
     """
 
-    print("\nPaste your LinkedIn profile text below.")
-    print("Do NOT paste a LinkedIn URL. Paste the actual text from your profile.\n")
+    print("\nEnter the path to your LinkedIn export folder.")
+    print("Example:")
+    print("/Users/username/Downloads/LinkedInData")
+    print("or")
+    print("C:\\Users\\username\\Downloads\\LinkedInData\n")
 
-    lines = []
-    while True:
-        line = input()
-        if line.strip() == "" and lines:
-            break
-        lines.append(line)
+    folder = input("LinkedIn export folder path: ").strip()
 
-    profile_text = "\n".join(lines).strip()
+    if not os.path.isdir(folder):
+        print("\nError: That folder does not exist.")
+        sys.exit(1)
 
-    if "linkedin.com" in profile_text:
-        print("\n⚠️  It looks like you pasted a LinkedIn URL.")
-        print("This tool cannot read LinkedIn pages.")
-        print("Please paste the actual profile text instead.\n")
-
-    return profile_text
+    return folder
 
 
-def main() -> None:
+def main():
+
     print("LinkedIn Profile Coach AI")
     print("=" * 26)
 
     try:
-        profile_text = read_profile_input()
 
-        if not profile_text:
-            print("No profile text provided.")
+        folder = get_linkedin_folder()
+
+        print("\nReading LinkedIn data...\n")
+
+        parser = LinkedInDataParser(folder)
+        profile_text = parser.parse()
+
+        if not profile_text.strip():
+            print("No usable profile data found in the LinkedIn export.")
             sys.exit(1)
 
         gemini_client = GeminiClient()
         analyzer = LinkedInProfileAnalyzer(gemini_client)
         report_generator = ReportGenerator()
 
-        print("\nAnalyzing profile...\n")
+        print("Analyzing profile with AI...\n")
 
         analysis = analyzer.analyze_profile(profile_text)
+
         report = report_generator.generate_report(analysis)
 
         print(report)
 
     except KeyboardInterrupt:
+
         print("\nOperation cancelled.")
         sys.exit(0)
 
-    except Exception as exc:
+    except Exception as e:
+
         print("\nError occurred:")
-        print(str(exc))
+        print(str(e))
         sys.exit(1)
 
 
