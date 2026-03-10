@@ -30,9 +30,7 @@ class ReportGenerator:
         lines.extend(self._format_section("Skills", analysis.get("skills", {})))
         lines.extend(self._format_section("Featured", analysis.get("featured", {})))
         lines.extend(self._format_section("Banner", analysis.get("banner", {})))
-        lines.extend(
-            self._format_completeness_section(analysis.get("completeness", {}))
-        )
+        lines.extend(self._format_completeness_section(analysis.get("completeness", {})))
 
         return "\n".join(lines).strip()
 
