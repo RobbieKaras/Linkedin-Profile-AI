@@ -11,10 +11,11 @@ from src.report_generator import ReportGenerator
 def read_profile_input() -> str:
     """
     Prompt the user to paste LinkedIn profile text.
-    Input ends after two Enter presses in a row.
+    Input ends after one blank line.
     """
+
     print("\nPaste your LinkedIn profile text below.")
-    print("When finished, press ENTER on a blank line.\n")
+    print("Do NOT paste a LinkedIn URL. Paste the actual text from your profile.\n")
 
     lines = []
     while True:
@@ -23,7 +24,14 @@ def read_profile_input() -> str:
             break
         lines.append(line)
 
-    return "\n".join(lines).strip()
+    profile_text = "\n".join(lines).strip()
+
+    if "linkedin.com" in profile_text:
+        print("\n⚠️  It looks like you pasted a LinkedIn URL.")
+        print("This tool cannot read LinkedIn pages.")
+        print("Please paste the actual profile text instead.\n")
+
+    return profile_text
 
 
 def main() -> None:
