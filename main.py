@@ -10,21 +10,58 @@ from src.report_generator import ReportGenerator
 from src.linkedin_parser import LinkedInDataParser
 
 
-def get_linkedin_folder():
+def choose_input_method():
+    print("\nChoose how you want to provide your LinkedIn data:\n")
+    print("1) Paste profile text")
+    print("2) Use LinkedIn data export folder\n")
+
+    choice = input("Enter 1 or 2: ").strip()
+
+    if choice not in ["1", "2"]:
+        print("Invalid choice.")
+        sys.exit(1)
+
+    return choice
+
+
+def read_profile_input():
     """
-    Ask the user for the LinkedIn export folder path.
+    Method 1: User pastes profile text
     """
 
-    print("\nEnter the path to your LinkedIn export folder.")
-    print("Example:")
-    print("/Users/username/Downloads/LinkedInData")
-    print("or")
-    print("C:\\Users\\username\\Downloads\\LinkedInData\n")
+    print("\nPaste your LinkedIn profile text below.")
+    print("When finished press ENTER on a blank line.\n")
+
+    lines = []
+
+    while True:
+        line = input()
+
+        if line.strip() == "" and lines:
+            break
+
+        lines.append(line)
+
+    profile_text = "\n".join(lines).strip()
+
+    if not profile_text:
+        print("No profile text provided.")
+        sys.exit(1)
+
+    return profile_text
+
+
+def get_linkedin_folder():
+    """
+    Method 2: User provides LinkedIn export folder
+    """
+
+    print("\nEnter the path to your LinkedIn export folder.\n")
 
     folder = input("LinkedIn export folder path: ").strip()
 
     if not os.path.isdir(folder):
-        print("\nError: That folder does not exist.")
+        print("Error: That folder does not exist.")
         sys.exit(1)
 
     return folder
@@ -37,22 +74,30 @@ def main():
 
     try:
 
-        folder = get_linkedin_folder()
+        method = choose_input_method()
 
-        print("\nReading LinkedIn data...\n")
+        if method == "1":
 
-        parser = LinkedInDataParser(folder)
-        profile_text = parser.parse()
+            profile_text = read_profile_input()
+
+        else:
+
+            folder = get_linkedin_folder()
+
+            print("\nReading LinkedIn export data...\n")
+
+            parser = LinkedInDataParser(folder)
+            profile_text = parser.parse()
 
         if not profile_text.strip():
-            print("No usable profile data found in the LinkedIn export.")
+            print("No usable profile data found.")
             sys.exit(1)
 
         gemini_client = GeminiClient()
         analyzer = LinkedInProfileAnalyzer(gemini_client)
         report_generator = ReportGenerator()
 
-        print("Analyzing profile with AI...\n")
+        print("\nAnalyzing profile with AI...\n")
 
         analysis = analyzer.analyze_profile(profile_text)
 
