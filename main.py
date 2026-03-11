@@ -13,20 +13,23 @@ from src.post_analysis import PostAnalysisAssistant
 
 
 def choose_input_method():
-    print("\nChoose how you want to provide your LinkedIn data:\n")
-    print("1) Paste LinkedIn profile text")
-    print("2) Use LinkedIn data export folder\n")
 
-    choice = input("Enter 1 or 2: ").strip()
+    while True:
 
-    if choice not in ["1", "2"]:
-        print("Invalid choice.")
-        sys.exit(1)
+        print("\nChoose how you want to provide your LinkedIn data:\n")
+        print("1) Paste LinkedIn profile text")
+        print("2) Use LinkedIn data export folder\n")
 
-    return choice
+        choice = input("Enter 1 or 2: ").strip()
+
+        if choice in ["1", "2"]:
+            return choice
+
+        print("\nInvalid choice. Please enter 1 or 2.\n")
 
 
 def read_profile_input():
+
     print("\nPaste your LinkedIn profile text below.")
     print("Press ENTER on a blank line when finished.\n")
 
@@ -41,74 +44,76 @@ def read_profile_input():
     profile_text = "\n".join(lines).strip()
 
     if not profile_text:
-        print("No profile text provided.")
-        sys.exit(1)
+        print("\nNo profile text provided. Please try again.\n")
+        return read_profile_input()
 
     return profile_text
 
 
 def get_linkedin_folder():
-    print("\nEnter the path to your LinkedIn export folder.\n")
 
-    folder = input("LinkedIn export folder path: ").strip()
+    while True:
 
-    if not os.path.isdir(folder):
-        print("Error: That folder does not exist.")
-        sys.exit(1)
+        print("\nEnter the path to your LinkedIn export folder.\n")
 
-    return folder
+        folder = input("LinkedIn export folder path: ").strip()
+
+        if os.path.isdir(folder):
+            return folder
+
+        print("\nError: That folder does not exist. Please try again.\n")
 
 
 def ask_for_resume():
 
-    print("\nWould you like to include your resume for better analysis?")
-    print("1) Yes")
-    print("2) No\n")
+    while True:
 
-    choice = input("Enter 1 or 2: ").strip()
+        print("\nWould you like to include your resume for better analysis?")
+        print("1) Yes")
+        print("2) No\n")
 
-    if choice == "1":
+        choice = input("Enter 1 or 2: ").strip()
 
-        print("\nPaste your resume text below.")
-        print("Press ENTER on a blank line when finished.\n")
+        if choice == "1":
 
-        lines = []
+            print("\nPaste your resume text below.")
+            print("Press ENTER on a blank line when finished.\n")
 
-        while True:
-            line = input()
+            lines = []
 
-            if line.strip() == "" and lines:
-                break
+            while True:
+                line = input()
 
-            lines.append(line)
+                if line.strip() == "" and lines:
+                    break
 
-        resume_text = "\n".join(lines).strip()
+                lines.append(line)
 
-        return resume_text
+            return "\n".join(lines).strip()
 
-    elif choice == "2":
-        return ""
+        elif choice == "2":
+            return ""
 
-    else:
-        print("Invalid choice.")
-        sys.exit(1)
+        print("\nInvalid choice. Please enter 1 or 2.\n")
 
 
 def ask_to_save_report():
 
-    print("\nWould you like to save this report to a file?")
-    print("1) Yes")
-    print("2) No\n")
+    while True:
 
-    choice = input("Enter 1 or 2: ").strip()
+        print("\nWould you like to save this report to a file?")
+        print("1) Yes")
+        print("2) No\n")
 
-    if choice == "1":
-        return True
-    elif choice == "2":
-        return False
-    else:
-        print("Invalid choice.")
-        sys.exit(1)
+        choice = input("Enter 1 or 2: ").strip()
+
+        if choice == "1":
+            return True
+
+        if choice == "2":
+            return False
+
+        print("\nInvalid choice. Please enter 1 or 2.\n")
 
 
 def save_text_output(content, prefix):
@@ -131,21 +136,22 @@ def save_text_output(content, prefix):
 
 def post_report_menu():
 
-    print("\nWhat would you like to do next?\n")
+    while True:
 
-    print("1) Get step-by-step improvement plan")
-    print("2) Get improvement ideas & certificate suggestions")
-    print("3) Chat with AI about your profile")
-    print("4) Generate improved LinkedIn profile")
-    print("5) Exit\n")
+        print("\nWhat would you like to do next?\n")
 
-    choice = input("Enter 1, 2, 3, 4, or 5: ").strip()
+        print("1) Get step-by-step improvement plan")
+        print("2) Get improvement ideas & certificate suggestions")
+        print("3) Chat with AI about your profile")
+        print("4) Generate improved LinkedIn profile")
+        print("5) Exit\n")
 
-    if choice not in ["1", "2", "3", "4", "5"]:
-        print("Invalid choice.")
-        return "5"
+        choice = input("Enter 1, 2, 3, 4, or 5: ").strip()
 
-    return choice
+        if choice in ["1", "2", "3", "4", "5"]:
+            return choice
+
+        print("\nInvalid choice. Please enter 1, 2, 3, 4, or 5.\n")
 
 
 def handle_follow_up_actions(
@@ -208,6 +214,7 @@ def handle_follow_up_actions(
                 question = input("You: ").strip()
 
                 if question.lower() == "exit":
+                    print("")
                     break
 
                 if not question:
@@ -273,7 +280,6 @@ def main():
         resume_text = ask_for_resume()
 
         if resume_text:
-
             profile_text = profile_text + "\n\nRESUME INFORMATION:\n" + resume_text
 
         if not profile_text.strip():
@@ -282,17 +288,13 @@ def main():
             sys.exit(1)
 
         gemini_client = GeminiClient()
-
         analyzer = LinkedInProfileAnalyzer(gemini_client)
-
         report_generator = ReportGenerator()
-
         post_analysis_assistant = PostAnalysisAssistant(gemini_client)
 
         print("\nAnalyzing profile with AI...\n")
 
         analysis = analyzer.analyze_profile(profile_text)
-
         report = report_generator.generate_report(analysis)
 
         print(report)
