@@ -30,24 +30,24 @@ def choose_input_method():
 
 def read_profile_input():
 
-    print("\nPaste your LinkedIn profile text below.")
-    print("Press ENTER on a blank line when finished.\n")
-
-    lines = []
-
     while True:
-        line = input()
-        if line.strip() == "" and lines:
-            break
-        lines.append(line)
+        print("\nPaste your LinkedIn profile text below.")
+        print("Press ENTER on a blank line when finished.\n")
 
-    profile_text = "\n".join(lines).strip()
+        lines = []
 
-    if not profile_text:
+        while True:
+            line = input()
+            if line.strip() == "" and lines:
+                break
+            lines.append(line)
+
+        profile_text = "\n".join(lines).strip()
+
+        if profile_text:
+            return profile_text
+
         print("\nNo profile text provided. Please try again.\n")
-        return read_profile_input()
-
-    return profile_text
 
 
 def get_linkedin_folder():
@@ -132,6 +132,50 @@ def save_text_output(content, prefix):
         file.write(content)
 
     return file_path
+
+
+def get_cached_profile_path():
+    cache_dir = "cache"
+    os.makedirs(cache_dir, exist_ok=True)
+    return os.path.join(cache_dir, "last_profile_input.txt")
+
+
+def load_cached_profile():
+    file_path = get_cached_profile_path()
+
+    if not os.path.exists(file_path):
+        return ""
+
+    with open(file_path, "r", encoding="utf-8") as file:
+        return file.read().strip()
+
+
+def save_cached_profile(profile_text):
+    file_path = get_cached_profile_path()
+
+    with open(file_path, "w", encoding="utf-8") as file:
+        file.write(profile_text)
+
+
+def ask_to_reuse_cached_profile(cached_text):
+    if not cached_text:
+        return False
+
+    while True:
+        print("\nSaved profile data from your last run was found.")
+        print("Would you like to reuse it?")
+        print("1) Yes")
+        print("2) No\n")
+
+        choice = input("Enter 1 or 2: ").strip()
+
+        if choice == "1":
+            return True
+
+        if choice == "2":
+            return False
+
+        print("\nInvalid choice. Please enter 1 or 2.\n")
 
 
 def post_report_menu():
@@ -260,32 +304,36 @@ def main():
     print("=" * 26)
 
     try:
+        cached_profile = load_cached_profile()
+        reuse_cached = ask_to_reuse_cached_profile(cached_profile)
 
-        method = choose_input_method()
-
-        if method == "1":
-
-            profile_text = read_profile_input()
+        if reuse_cached:
+            profile_text = cached_profile
+            print("\nUsing saved profile data...\n")
 
         else:
+            method = choose_input_method()
 
-            folder = get_linkedin_folder()
+            if method == "1":
+                profile_text = read_profile_input()
+            else:
+                folder = get_linkedin_folder()
 
-            print("\nReading LinkedIn export data...\n")
+                print("\nReading LinkedIn export data...\n")
 
-            parser = LinkedInDataParser(folder)
+                parser = LinkedInDataParser(folder)
+                profile_text = parser.parse()
 
-            profile_text = parser.parse()
+            resume_text = ask_for_resume()
 
-        resume_text = ask_for_resume()
+            if resume_text:
+                profile_text = profile_text + "\n\nRESUME INFORMATION:\n" + resume_text
 
-        if resume_text:
-            profile_text = profile_text + "\n\nRESUME INFORMATION:\n" + resume_text
+            if not profile_text.strip():
+                print("No usable profile data found.")
+                sys.exit(1)
 
-        if not profile_text.strip():
-
-            print("No usable profile data found.")
-            sys.exit(1)
+            save_cached_profile(profile_text)
 
         gemini_client = GeminiClient()
         analyzer = LinkedInProfileAnalyzer(gemini_client)
